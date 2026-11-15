@@ -7,22 +7,55 @@ const projects = [
  {title:'Leave Management Workflow',type:'Internal tools',image:'HR.png',description:'Employee leave requests and manager approval workflows built with Oracle APEX.',detail:'Automated the leave-request process to reduce manual approval work, using backend PL/SQL and APEX workflows.'}
 ];
 const list = document.querySelector('#project-list');
-projects.forEach((project,index) => {
- const row=document.createElement('details'); row.className='project-row';
- const summary=document.createElement('summary');
- const number=document.createElement('span');number.className='eyebrow accent';number.textContent=String(index+2).padStart(2,'0')+' / '+project.type;
- const title=document.createElement('h3');title.textContent=project.title;
- const description=document.createElement('p');description.textContent=project.description;
- const arrow=document.createElement('span');arrow.className='expand';arrow.textContent='+';arrow.setAttribute('aria-hidden','true');
- summary.append(number,title,description,arrow);
- const content=document.createElement('div');content.className='project-expanded';
- const copy=document.createElement('div');const heading=document.createElement('h4');heading.textContent='Behind the project';const detail=document.createElement('p');detail.textContent=project.detail;const tech=document.createElement('p');tech.className='small';tech.textContent='Oracle APEX � PL/SQL � Oracle Database � JavaScript';copy.append(heading,detail,tech);
- const button=document.createElement('button');button.className='image-button';button.dataset.image=project.image;button.setAttribute('aria-label','Enlarge '+project.title+' screenshot');
- const image=document.createElement('img');image.src=assetRoot+project.image;image.alt=project.title+' screenshot from my original portfolio';image.loading='lazy';image.width=1200;image.height=720;button.append(image);content.append(copy,button);row.append(summary,content);list.append(row);
+const reducedMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function icon(name='arrow'){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.classList.add('icon');
+ const path=document.createElementNS(svg.namespaceURI,'path');
+ path.setAttribute('d',name==='close'?'M6 6l12 12M6 18L18 6':'M5 19L19 5M5 5h14v14');svg.append(path);return svg;
+}
+function textElement(tag,text,className){const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;}
+const projectDialog=document.querySelector('#project-dialog');
+const imageDialog=document.querySelector('#image-dialog');
+function openProject(project){
+ projectDialog.querySelector('#project-title').textContent=project.title;
+ projectDialog.querySelector('.project-category').textContent=project.type+' / Oracle APEX';
+ projectDialog.querySelector('.project-description').textContent=project.description;
+ projectDialog.querySelector('.project-contribution').textContent=project.detail;
+ const image=projectDialog.querySelector('img');image.src=assetRoot+project.image;image.alt=project.title+' screenshot';
+ const button=projectDialog.querySelector('[data-image]');button.dataset.image=project.image;button.setAttribute('aria-label','Enlarge '+project.title+' screenshot');
+ projectDialog.showModal();projectDialog.scrollTop=0;
+}
+projects.forEach((project,index)=>{
+ const row=document.createElement('button');row.type='button';row.className='project-row';row.setAttribute('aria-haspopup','dialog');row.setAttribute('aria-controls','project-dialog');
+ row.append(textElement('span',String(index+2).padStart(2,'0')+' / '+project.type,'eyebrow accent'),textElement('span',project.title,'project-name'),textElement('span',project.description,'project-summary'),icon());
+ row.addEventListener('click',()=>openProject(project));list.append(row);
 });
-const dialog=document.querySelector('#image-dialog');
-document.addEventListener('click',event=>{const button=event.target.closest('[data-image]');if(button){dialog.querySelector('img').src=assetRoot+button.dataset.image;dialog.querySelector('img').alt=button.querySelector('img').alt;dialog.showModal();}});
-dialog.querySelector('button').addEventListener('click',()=>dialog.close());
-dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
-document.querySelector('#motor-trigger').addEventListener('click',()=>{document.querySelector('#motor-details').open=true;});
+const motor={title:'Motor & Travel Quotation Portal',type:'Insurance',image:'MotorTravel.png',description:'A unified quotation platform for vehicle details, trip information and dynamic premium calculations, with real-time validation.',detail:'Implemented quotation workflows and PL/SQL business rules for vehicle risk classification, driver profiling and travel pricing, with interactive forms and underwriting validation.'};
+document.querySelector('#motor-trigger').addEventListener('click',event=>{event.preventDefault();openProject(motor);});
+const closing=new WeakSet();
+function closeDialog(dialog){
+ if(!dialog.open||closing.has(dialog))return;
+ if(reducedMotion()){dialog.close();return;}
+ closing.add(dialog);
+ dialog.animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(12px)'}],{duration:150,easing:'ease-in',fill:'forwards'}).finished.finally(()=>{
+  dialog.close();dialog.getAnimations().forEach(animation=>animation.cancel());closing.delete(dialog);
+ });
+}
+for(const dialog of [projectDialog,imageDialog]){
+ dialog.querySelector('.close-dialog').addEventListener('click',()=>closeDialog(dialog));
+ dialog.addEventListener('cancel',event=>{event.preventDefault();closeDialog(dialog);});
+ let backdropDown=false;
+ dialog.addEventListener('pointerdown',event=>{backdropDown=event.target===dialog;});
+ dialog.addEventListener('click',event=>{if(backdropDown&&event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)closeDialog(dialog);}backdropDown=false;});
+}
+document.addEventListener('click',event=>{
+ const button=event.target.closest('[data-image]');if(!button)return;
+ imageDialog.querySelector('img').src=assetRoot+button.dataset.image;imageDialog.querySelector('img').alt=button.querySelector('img').alt;imageDialog.showModal();
+});
+// Progressive enhancement: content remains visible without IntersectionObserver.
+if('IntersectionObserver' in window&&!reducedMotion()){
+ const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.remove('reveal-pending');observer.unobserve(entry.target);}}),{threshold:0.08});
+ document.querySelectorAll('main>section,.project-row').forEach(el=>{el.classList.add('reveal-target','reveal-pending');observer.observe(el);});
+}
 document.querySelector('#year').textContent=new Date().getFullYear();

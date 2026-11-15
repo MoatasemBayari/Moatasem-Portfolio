@@ -1,0 +1,12 @@
+import { readFileSync, existsSync } from 'node:fs';
+import assert from 'node:assert/strict';
+const html = readFileSync('index.html','utf8');
+const ids = new Set([...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]));
+for(const [,anchor] of html.matchAll(/href="#([^"]+)"/g)) assert(ids.has(anchor), 'Missing anchor: '+anchor);
+for(const file of ['styles.css','app.js','resume.html','build.mjs']) assert(existsSync(file),file);
+assert(html.includes('./assets/profile.jpg'));
+assert(html.includes('https://www.linkedin.com/in/moatasem-bayari/'));
+assert(html.includes('mailto:mo3tasembayariwork@gmail.com'));
+assert(!html.includes('href="#" class="text-link"'));
+assert(readFileSync('styles.css','utf8').includes('prefers-reduced-motion'));
+console.log('PASS: section anchors, local links, profile image path, contact details, reduced motion');
