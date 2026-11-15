@@ -41,6 +41,24 @@ for(const width of [1440,390]){
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.locator('.project-row').first().click();await modal.waitFor({state:'visible'});
  assert.equal(await modal.evaluate(el=>getComputedStyle(el).animationName),'none','Reduced motion honored');
+ await page.keyboard.press('Escape');await modal.waitFor({state:'hidden'});
+ const form=page.locator('#contact-form');assert.equal(await form.count(),1,'Original contact form is available');
+ let sends=0;
+ await page.route('https://api.emailjs.com/api/v1.0/email/send',async route=>{
+  sends++;const payload=route.request().postDataJSON();assert.equal(payload.template_params.from_name,'Browser test');
+  await new Promise(r=>setTimeout(r,150));await route.fulfill({status:200,contentType:'text/plain',body:'OK'});
+ });
+ await form.locator('button[type=submit]').click();assert.equal(sends,0,'Invalid form does not send');
+ await form.locator('[name=name]').fill('Browser test');await form.locator('[name=email]').fill('test@example.com');await form.locator('[name=message]').fill('Automated UI test; network is intercepted.');
+ await form.locator('button[type=submit]').click();
+ await page.locator('#form-status').filter({hasText:'Message sent'}).waitFor();
+ assert.equal(sends,1,'Only one request');assert.equal(await form.locator('[name=name]').inputValue(),'','Success clears form');
+ await page.unroute('https://api.emailjs.com/api/v1.0/email/send');
+ await page.route('https://api.emailjs.com/api/v1.0/email/send',route=>route.fulfill({status:500,body:'Unavailable'}));
+ await form.locator('[name=name]').fill('Keep my message');await form.locator('[name=email]').fill('test@example.com');await form.locator('[name=message]').fill('Do not discard on failure.');await form.locator('button[type=submit]').click();
+ await page.locator('#form-status').filter({hasText:'could not'}).waitFor();
+ assert.equal(await form.locator('[name=message]').inputValue(),'Do not discard on failure.');
+ assert.equal(await form.locator('button[type=submit]').isEnabled(),true,'Can retry after failure');
  assert.deepEqual(errors,[],'No browser errors');
  console.log('PASS browser '+width+'px: project overlays, nested image, scroll/focus, SVG, assets, reduced motion, no JS errors');
  await page.close();
