@@ -17,6 +17,11 @@ function icon(name='arrow'){
 function textElement(tag,text,className){const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;}
 const projectDialog=document.querySelector('#project-dialog');
 const imageDialog=document.querySelector('#image-dialog');
+const dialogOrigins=new WeakMap();
+function showDialog(dialog){
+ dialogOrigins.set(dialog,{x:window.scrollX,y:window.scrollY,trigger:document.activeElement});
+ dialog.showModal();
+}
 function openProject(project){
  projectDialog.querySelector('#project-title').textContent=project.title;
  projectDialog.querySelector('.project-category').textContent=project.type+' / Oracle APEX';
@@ -24,7 +29,7 @@ function openProject(project){
  projectDialog.querySelector('.project-contribution').textContent=project.detail;
  const image=projectDialog.querySelector('img');image.src=assetRoot+project.image;image.alt=project.title+' screenshot';
  const button=projectDialog.querySelector('[data-image]');button.dataset.image=project.image;button.setAttribute('aria-label','Enlarge '+project.title+' screenshot');
- projectDialog.showModal();projectDialog.scrollTop=0;
+ showDialog(projectDialog);projectDialog.scrollTop=0;
 }
 projects.forEach((project,index)=>{
  const row=document.createElement('button');row.type='button';row.className='project-row';row.setAttribute('aria-haspopup','dialog');row.setAttribute('aria-controls','project-dialog');
@@ -43,6 +48,11 @@ function closeDialog(dialog){
  });
 }
 for(const dialog of [projectDialog,imageDialog]){
+ dialog.addEventListener('close',()=>{
+  const origin=dialogOrigins.get(dialog);if(!origin)return;
+  origin.trigger?.focus({preventScroll:true});
+  window.scrollTo({left:origin.x,top:origin.y,behavior:'instant'});
+ });
  dialog.querySelector('.close-dialog').addEventListener('click',()=>closeDialog(dialog));
  dialog.addEventListener('cancel',event=>{event.preventDefault();closeDialog(dialog);});
  let backdropDown=false;
@@ -51,7 +61,7 @@ for(const dialog of [projectDialog,imageDialog]){
 }
 document.addEventListener('click',event=>{
  const button=event.target.closest('[data-image]');if(!button)return;
- imageDialog.querySelector('img').src=assetRoot+button.dataset.image;imageDialog.querySelector('img').alt=button.querySelector('img').alt;imageDialog.showModal();
+ imageDialog.querySelector('img').src=assetRoot+button.dataset.image;imageDialog.querySelector('img').alt=button.querySelector('img').alt;showDialog(imageDialog);
 });
 // Progressive enhancement: content remains visible without IntersectionObserver.
 if('IntersectionObserver' in window&&!reducedMotion()){

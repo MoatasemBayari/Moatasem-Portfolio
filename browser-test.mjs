@@ -16,7 +16,7 @@ for(const width of [1440,390]){
  assert(await page.locator('svg.icon').count()>=8,'Use dependable inline SVG icons');
  assert(!(await page.locator('body').textContent()).includes('\uFFFD'),'No corrupted text');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'No horizontal overflow');
- const row=page.locator('.project-row').first();await row.scrollIntoViewIfNeeded();
+ const row=page.locator('.project-row').first();await row.scrollIntoViewIfNeeded();await page.waitForTimeout(750);
  const before=await page.evaluate(()=>({y:scrollY,height:document.documentElement.scrollHeight}));
  await row.click();await page.waitForTimeout(300);
  const modal=page.locator('#project-dialog');await modal.waitFor({state:'visible'});
@@ -28,7 +28,7 @@ for(const width of [1440,390]){
  assert.equal(await modal.isVisible(),true,'Image closes back to case study');
  await page.keyboard.press('Escape');await page.waitForTimeout(250);
  assert.equal(await modal.isVisible(),false);
- assert(Math.abs(await page.evaluate(()=>scrollY)-before.y)<=1,'Scroll restored');
+ const afterY=await page.evaluate(()=>scrollY);assert(Math.abs(afterY-before.y)<=1,`Scroll restored: before=${before.y} after=${afterY}`);
  assert.equal(await row.evaluate(el=>el===document.activeElement),true,'Focus restored');
  await page.locator('#motor-trigger').click();await modal.waitFor({state:'visible'});
  assert((await modal.locator('h3').textContent()).includes('Motor'));
