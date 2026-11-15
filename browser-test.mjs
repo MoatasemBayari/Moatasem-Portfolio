@@ -10,7 +10,7 @@ const browser=await chromium.launch();
 try{
 for(const width of [1440,390]){
  const page=await browser.newPage({viewport:{width,height:900}});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('BROWSER ERROR',e.message);});
  await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
  assert.equal(await page.locator('button.project-row').count(),5,'Projects must open an overlay, not inline expansion');
  assert(await page.locator('svg.icon').count()>=8,'Use dependable inline SVG icons');
@@ -24,9 +24,9 @@ for(const width of [1440,390]){
  assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight),before.height,'Modal must not lengthen page');
  const box=await modal.boundingBox();assert(box.height<=900&&box.width<=width,'Modal fits viewport');
  await modal.locator('[data-image]').click();await page.locator('#image-dialog').waitFor({state:'visible'});
- await page.keyboard.press('Escape');await page.waitForTimeout(250);
+ await page.keyboard.press('Escape');await page.locator('#image-dialog').waitFor({state:'hidden'});
  assert.equal(await modal.isVisible(),true,'Image closes back to case study');
- await page.keyboard.press('Escape');await page.waitForTimeout(250);
+ await page.keyboard.press('Escape');await modal.waitFor({state:'hidden'});
  assert.equal(await modal.isVisible(),false);
  const afterY=await page.evaluate(()=>scrollY);assert(Math.abs(afterY-before.y)<=1,`Scroll restored: before=${before.y} after=${afterY}`);
  assert.equal(await row.evaluate(el=>el===document.activeElement),true,'Focus restored');
