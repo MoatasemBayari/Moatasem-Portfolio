@@ -23,6 +23,10 @@ jobs:
           node-version: '22'
       - run: npm run check
       - run: npm run build
+      - name: Render LinkedIn cover
+        run: |
+          google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --virtual-time-budget=1000 --screenshot="$PWD/_site/social-preview.png" --window-size=1200,630 "file://$PWD/_site/social-card.html"
+          node -e "const b=require('fs').readFileSync('_site/social-preview.png');if(b.readUInt32BE(16)!==1200||b.readUInt32BE(20)!==630)throw Error('Invalid social cover dimensions');console.log('PASS: LinkedIn PNG cover 1200x630');"
       - uses: actions/configure-pages@v5
         with:
           enablement: true

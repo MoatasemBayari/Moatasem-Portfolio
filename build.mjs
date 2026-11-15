@@ -3,7 +3,7 @@ const root = 'https://raw.githubusercontent.com/MoatasemBayari/MoatasemPortfolio
 const assets = ['profile.jpg','MotorTravel.png','HealthInsurance.png','Life.png','Salvage.png','Workshop.png','HR.png'];
 await rm('_site', {recursive:true,force:true});
 await mkdir('_site/assets',{recursive:true});
-for (const file of ['index.html','styles.css','app.js','contact.js','resume.html']) await copyFile(file, '_site/'+file);
+for (const file of ['index.html','styles.css','app.js','contact.js','resume.html','social-card.html']) await copyFile(file, '_site/'+file);
 for (const asset of assets) {
  const response = await fetch(root+asset);
  if (!response.ok) throw new Error(`Asset ${asset}: HTTP ${response.status}`);
